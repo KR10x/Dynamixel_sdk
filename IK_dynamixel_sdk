@@ -73,6 +73,20 @@ def rad_to_tick(motor_id, radian_cmd):
 L1 = 0.11
 L2 = 0.116
 
+# ==========================================================
+# Gait Parameters
+# ==========================================================
+RIGHT_STEP_LENGTH = 0.12
+LEFT_STEP_LENGTH = 0.15   
+SUPPORT_RATIO = 0.65 
+STAGE6_SUPPORT_OFFSET = 0.01   
+
+KNEE_MARGIN = 0.006 
+STAGE6_KNEE_MARGIN = 0.012    
+
+MAX_H_DIFF = 0.015      
+
+
 target_h_left = 0.23
 target_h_right = 0.23
 target_shift_left = 0.0
@@ -127,90 +141,145 @@ def transition_to(h_l, h_r, shift_l, shift_r, x_l, x_r, duration):
         
         set_targets(cur_h_l, cur_h_r, cur_shift_l, cur_shift_r, cur_x_l, cur_x_r, dt)
 
+def generate_stage5(step_length):
+    x_r = SUPPORT_RATIO * step_length
+    x_l = -(step_length - x_r)
+    hmax_l = math.sqrt((L1 + L2)**2 - x_l*x_l)
+    hmax_r = math.sqrt((L1 + L2)**2 - x_r*x_r)
+    h_l = hmax_l - KNEE_MARGIN
+    h_r = hmax_r - KNEE_MARGIN
+    if abs(h_l-h_r) > MAX_H_DIFF:
+        if h_l > h_r: h_l = h_r + MAX_H_DIFF
+        else: h_r = h_l + MAX_H_DIFF
+    shift_l = 0.10
+    shift_r = 0.10
+    return h_l,h_r,shift_l,shift_r,x_l,x_r
+
+def generate_stage6(step_length):
+    x_r = STAGE6_SUPPORT_OFFSET
+    x_l = -(step_length - x_r)
+    hmax_l = math.sqrt((L1+L2)**2 - x_l*x_l)
+    hmax_r = math.sqrt((L1+L2)**2 - x_r*x_r)
+    h_l = hmax_l - STAGE6_KNEE_MARGIN
+    h_r = hmax_r - STAGE6_KNEE_MARGIN
+    if abs(h_l-h_r) > MAX_H_DIFF:
+        if h_l > h_r: h_l = h_r + MAX_H_DIFF
+        else: h_r = h_l + MAX_H_DIFF
+    shift_l = -0.30
+    shift_r = -0.30
+    return h_l,h_r,shift_l,shift_r,x_l,x_r
+
+def generate_stage7(step_length):
+    x_l = SUPPORT_RATIO * step_length
+    x_r = -(step_length - x_l)
+    hmax_l = math.sqrt((L1+L2)**2 - x_l*x_l)
+    hmax_r = math.sqrt((L1+L2)**2 - x_r*x_r)
+    h_l = hmax_l - KNEE_MARGIN
+    h_r = hmax_r - KNEE_MARGIN
+    if abs(h_l-h_r) > MAX_H_DIFF:
+        if h_l > h_r: h_l = h_r + MAX_H_DIFF
+        else: h_r = h_l + MAX_H_DIFF
+    shift_l_start = -0.40
+    shift_l_end   = -0.35
+    shift_r = -0.30
+    return (h_l, h_r, shift_l_start, shift_l_end, shift_r, x_l, x_r)
+
+def generate_stage8(step_length):
+    x_l = SUPPORT_RATIO * step_length
+    x_r = -(step_length - x_l)
+    hmax_l = math.sqrt((L1+L2)**2 - x_l*x_l)
+    hmax_r = math.sqrt((L1+L2)**2 - x_r*x_r)
+    h_l = hmax_l - KNEE_MARGIN
+    h_r = hmax_r - KNEE_MARGIN
+    if abs(h_l-h_r) > MAX_H_DIFF:
+        if h_l > h_r: h_l = h_r + MAX_H_DIFF
+        else: h_r = h_l + MAX_H_DIFF
+    shift_l = -0.10
+    shift_r = -0.10
+    return h_l,h_r,shift_l,shift_r,x_l,x_r
+
+def generate_stage9(step_length):
+    x_l = STAGE6_SUPPORT_OFFSET
+    x_r = -(step_length - x_l)
+    hmax_l = math.sqrt((L1+L2)**2 - x_l*x_l)
+    hmax_r = math.sqrt((L1+L2)**2 - x_r*x_r)
+    h_l = hmax_l - STAGE6_KNEE_MARGIN
+    h_r = hmax_r - STAGE6_KNEE_MARGIN
+    if abs(h_l-h_r) > MAX_H_DIFF:
+        if h_l > h_r: h_l = h_r + MAX_H_DIFF
+        else: h_r = h_l + MAX_H_DIFF
+    shift_l = 0.30
+    shift_r = 0.30
+    return h_l,h_r,shift_l,shift_r,x_l,x_r
+
+def generate_stage10(step_length):
+    x_r = SUPPORT_RATIO * step_length
+    x_l = -(step_length - x_r)
+    hmax_l = math.sqrt((L1+L2)**2 - x_l*x_l)
+    hmax_r = math.sqrt((L1+L2)**2 - x_r*x_r)
+    h_l = hmax_l - KNEE_MARGIN
+    h_r = hmax_r - KNEE_MARGIN
+    if abs(h_l-h_r) > MAX_H_DIFF:
+        if h_l > h_r: h_l = h_r + MAX_H_DIFF
+        else: h_r = h_l + MAX_H_DIFF
+    shift_r_start = 0.40
+    shift_r_end   = 0.35
+    shift_l = 0.30
+    return (h_l, h_r, shift_l, shift_r_start, shift_r_end, x_l, x_r)
+
 def swing_trajectory_right(duration):
     steps = 50
     dt = duration / steps
+    h_l_final, h_r_final, shift_l_final, shift_r_final, x_l_final, x_r_final = generate_stage5(RIGHT_STEP_LENGTH)
+        
     for i in range(steps + 1):
         t = i / float(steps)
-        
-        # 1. Forward Progression
-        x_r = 0.00 + t * 0.08
-        
-        # 2. Sagittal Forward Lean
-        x_l = 0.00 - t * 0.03
-        
-        # 3. Foot Height Arc (Starts at 0.12 from pre-lift, ends near 0.19)
-        h_linear = 0.12 + t * (0.19 - 0.12)
-        h_r = h_linear - 0.03 * math.sin(math.pi * t)
-        
-        # 4. Lateral Stance
+        x_r = t*x_r_final
+        x_l = t*x_l_final
+        h_linear = 0.17 + t*(h_r_final-0.17)
+        h_r = h_linear - 0.03*math.sin(math.pi*t)
         com_lateral_sway = 0.03 * math.sin(math.pi * t)
-        shift_l = 0.30  
+        shift_l = 0.30
         shift_r = (0.40 - t* 0.05) + com_lateral_sway
-        
-        # 5. COM Frontal Plane Trajectory
         x_com = 2.0 + 2.0 * t
         com_bump = 0.015625 * ((x_com - 4.0) ** 2) * (x_com - 2.0)
-        h_l = 0.22 + 0.5*com_bump
-        
+        h_l = h_l_final + 0.5*com_bump
         set_targets(h_l, h_r, shift_l, shift_r, x_l, x_r, dt)
-
 
 def swing_trajectory_left(duration):
     steps = 50
     dt = duration / steps
+    h_l_start, h_r_start, _, _, x_l_start, x_r_start = generate_stage6(RIGHT_STEP_LENGTH)
+    (h_l_final, h_r_final, shift_l_start, shift_l_end, shift_r_const, x_l_final, x_r_final) = generate_stage7(LEFT_STEP_LENGTH)
+    
     for i in range(steps + 1):
         t = i / float(steps)
-        
-        # 1. Forward Progression
-        x_l = -0.10 + t * 0.20
-        
-        # 2. Sagittal Forward Lean
-        x_r = -0.01 + t * 0.02
-        
-        # 3. Foot Height Arc (Starts at 0.12 from pre-lift, ends near 0.19)
-        h_linear = 0.12 + t * (0.19 - 0.12)
-        h_l = h_linear - 0.03 * math.sin(math.pi * t)
-        
-        # 4. Lateral Stance
-        # Mirroring right leg: stay safely balanced on the supporting Right Leg (-0.30)
-        com_lateral_sway = 0.03 * math.sin(math.pi * t)
-        shift_r = -0.30
-        shift_l = (-0.40 + t * 0.05) - com_lateral_sway
-        
-        # 5. COM Frontal Plane Trajectory
-        x_com = 2.0 + 4.0 * t
-        com_bump = 0.015625 * ((x_com - 4.0) ** 2) * (x_com - 2.0)
-        h_r = 0.195 + com_bump + t*(0.22-0.195)
-        
+        x_l = x_l_start + t * (x_l_final - x_l_start)
+        x_r = x_r_start + t * (x_r_final - x_r_start)
+        com_bump = 0.02 * math.sin(math.pi * t)
+        h_linear = h_l_start + t * (h_l_final - h_l_start)
+        h_l = h_linear - 0.07 * math.sin(math.pi * t)
+        h_r = h_r_final + 0.5 * com_bump
+        shift_l = shift_l_start + t * (shift_l_end - shift_l_start)-0.04
+        shift_r = shift_r_const -0.02
         set_targets(h_l, h_r, shift_l, shift_r, x_l, x_r, dt)
 
 def swing_trajectory_right_continuous(duration):
     steps = 50
     dt = duration / steps
+    h_l_start, h_r_start, _, _, x_l_start, x_r_start = generate_stage9(LEFT_STEP_LENGTH)
+    (h_l_final, h_r_final, shift_l_const, shift_r_start, shift_r_end, x_l_final, x_r_final) = generate_stage10(RIGHT_STEP_LENGTH)
+    
     for i in range(steps + 1):
         t = i / float(steps)
-        
-        # 1. Forward Progression (swing from -0.10 behind to +0.10 ahead)
-        x_r = -0.10 + t * 0.20
-        x_l = -0.01 + t * 0.02
-        
-        # 3. Foot Height Arc (Starts at 0.12 from pre-lift, ends near 0.19)
-        h_linear = 0.12 + t * (0.19 - 0.12)
-        h_r = h_linear - 0.03 * math.sin(math.pi * t)
-        
-        # 4. Lateral Stance (Stay safely on supporting Left Leg: 0.30)
-        com_lateral_sway = 0.03 * math.sin(math.pi * t)
-        shift_l = 0.30
-        shift_r = (0.40 - t * 0.05) + com_lateral_sway
-        
-        # 5. COM Frontal Plane Trajectory
-
-
-        x_com = 2.0 + 4.0 * t
-        com_bump = 0.015625 * ((x_com - 4.0) ** 2) * (x_com - 2.0)
-        h_l = 0.195 + com_bump + t*(0.22-0.195)
-        
+        x_l = x_l_start + t * (x_l_final - x_l_start)
+        x_r = x_r_start + t * (x_r_final - x_r_start)
+        com_bump = 0.02 * math.sin(math.pi * t)
+        h_linear = h_r_start + t * (h_r_final - h_r_start)
+        h_r = h_linear - 0.07 * math.sin(math.pi * t)
+        h_l = h_l_final + 0.5 * com_bump
+        shift_r = shift_r_start + t * (shift_r_end - shift_r_start)+0.04
+        shift_l = shift_l_const + 0.02
         set_targets(h_l, h_r, shift_l, shift_r, x_l, x_r, dt)
 
 def walk_sequence(num_steps=10):
@@ -228,43 +297,49 @@ def walk_sequence(num_steps=10):
     transition_to(0.22, 0.22, 0.30, 0.30, 0.00, 0.00, 0.5) 
     
     print("Stage 3: Lifting Right Leg...")
-    transition_to(0.22, 0.12, 0.30, 0.40, 0.00, 0.00, 0.5)
+    transition_to(0.22, 0.17, 0.30, 0.40, 0.00, 0.00, 1.0)
 
     print("Stage 4: Initial Right Swing...")
     swing_trajectory_right(1.25)
     
     print("Stage 5: Right Touchdown...")
-    transition_to(0.21, 0.205, 0.10, 0.10, -0.04, 0.08, 1.0)
+    h_l, h_r, shift_l, shift_r, x_l, x_r = generate_stage5(RIGHT_STEP_LENGTH)
+    transition_to(h_l, h_r, shift_l, shift_r, x_l, x_r, 1.0)
 
     print("Stage 6: Forward lean (Weight on Right Leg)...")
-    transition_to(0.195, 0.185, -0.30, -0.30, -0.10, -0.01, 1.0)
+    h_l, h_r, shift_l, shift_r, x_l, x_r = generate_stage6(RIGHT_STEP_LENGTH)
+    transition_to(h_l, h_r, shift_l, shift_r, x_l, x_r, 1.0)
 
     for i in range(2, num_steps + 1):
         if i % 2 == 0:
             print(f"\n=== STEP {i}: Continuous Left Step ===")
-            print("Lifting Left Leg...")
-            transition_to(0.12, 0.185, -0.40, -0.30, -0.10, -0.01, 0.5)
             print("Left Swing...")
             swing_trajectory_left(1.25)
+            
             print("Left Touchdown...")
-            transition_to(0.205, 0.21, -0.10, -0.10, 0.08, -0.04, 1.0)
+            h_l, h_r, shift_l, shift_r, x_l, x_r = generate_stage8(LEFT_STEP_LENGTH)
+            transition_to(h_l, h_r, shift_l, shift_r, x_l, x_r, 1.0)
+            
             print("Forward Lean (Weight on Left Leg)...")
-            transition_to(0.185, 0.195, 0.30, 0.30, -0.01, -0.10, 1.0)
+            h_l, h_r, shift_l, shift_r, x_l, x_r = generate_stage9(LEFT_STEP_LENGTH)
+            transition_to(h_l, h_r, shift_l, shift_r, x_l, x_r, 1.0)
         else:
             print(f"\n=== STEP {i}: Continuous Right Step ===")
-            print("Lifting Right Leg...")
-            transition_to(0.185, 0.12, 0.30, 0.40, -0.01, -0.10, 0.5)
             print("Continuous Right Swing...")
-            swing_trajectory_right_continuous(2.55)
+            swing_trajectory_right_continuous(1.25)
+            
             print("Right Touchdown...")
-            transition_to(0.21, 0.205, 0.10, 0.10, -0.04, 0.08, 1.0)
-            print("Forward lean (Weight on Right Leg)...")
-            transition_to(0.195, 0.185, -0.30, -0.30, -0.10, -0.01, 1.0)
-
-    print("\nResetting to standing pose...")
+            h_l, h_r, shift_l, shift_r, x_l, x_r = generate_stage5(RIGHT_STEP_LENGTH)
+            transition_to(h_l, h_r, shift_l, shift_r, x_l, x_r, 1.0)
+            
+            print("Forward Lean (Weight on Right Leg)...")
+            h_l, h_r, shift_l, shift_r, x_l, x_r = generate_stage6(RIGHT_STEP_LENGTH)
+            transition_to(h_l, h_r, shift_l, shift_r, x_l, x_r, 1.0)
+            
+    print("\n--- Walk Complete. Resetting to standing pose... ---")
     transition_to(0.23, 0.23, 0.0, 0.0, 0.0, 0.0, 2.0)
-    
-    print(f"--- {num_steps}-Step Sequence Complete! Biped Stable. ---\n")
+
+
 
 def go_to_shutdown_pose():
     global is_shutting_down
@@ -445,7 +520,7 @@ def state_machine_thread():
             elif cmd == 'turn_left':
                 execute_turn(3.14, -1)
             elif cmd == 'turn_right':
-                execute_turn(3.14, 1)
+                execute_turn(6.28, 1)
 
         except AbortWalk:
             print("Motion Aborted.")
