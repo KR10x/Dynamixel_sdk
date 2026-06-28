@@ -347,120 +347,91 @@ def keyboard_listener_thread():
             abort_walk = False
             current_command = 'turn_right'
             
-        elif ch in ['w', 'W']:
-            print("\n>>> QUEUING STRAIGHT WALK <<<")
-            abort_walk = True
-            time.sleep(0.15)
-            abort_walk = False
-            current_command = 'straight'
+
             
         elif ch == '\n' or ch == '\r':
             if current_command is None:
                 current_command = 'walk'
 
-def execute_turn(direction):
+def execute_turn(total_angle, dir_sign):
     global target_yaw_left, target_yaw_right
-    print(f"\n=== EXECUTING TURN: {direction.upper()} ===")
+    direction_str = "LEFT" if dir_sign == -1 else "RIGHT"
+    print(f"\n=== EXECUTING TURN: {direction_str} (Total Angle: {total_angle}) ===")
     
-    print("Stage 1: Pre-Crouch (Double Support)...")
-    transition_to(0.22, 0.22, 0.0, 0.0, 0.0, 0.0, 0.5)
+    MAX_STEP = 0.3
+    n_full_steps = int(total_angle // MAX_STEP)
+    remainder = total_angle % MAX_STEP
     
-    if direction == "left":
-        print("Stage 2: Right Lateral Shift (Weight on Right)...")
-        transition_to(0.22, 0.22, -0.30, -0.30, 0.00, 0.00, 0.5)
+    steps = [MAX_STEP] * n_full_steps
+    if remainder > 0.01:
+        steps.append(remainder)
         
-        print("Stage 3: Lifting Left Leg...")
-        transition_to(0.12, 0.22, -0.40, -0.30, 0.00, 0.00, 0.5)
+    for i, step_angle in enumerate(steps):
+        print(f"\n--- Turn Step {i+1}/{len(steps)}: {step_angle:.2f} rad ---")
         
-        print("Turning Left Leg (Outward)...")
-        target_yaw_left = -0.2
-        time.sleep(0.7)
+        print("Stage 1: Pre-Crouch (Double Support)...")
+        transition_to(0.22, 0.22, 0.0, 0.0, 0.0, 0.0, 0.5)
         
-        print("Placing Left Leg on ground...")
-        transition_to(0.22, 0.22, -0.30, -0.30, 0.00, 0.00, 0.5)
-        
-        print("Left Lateral Shift (Weight on Left)...")
-        transition_to(0.22, 0.22, 0.30, 0.30, 0.00, 0.00, 0.5)
-        
-        print("Lifting Right Leg...")
-        transition_to(0.22, 0.12, 0.30, 0.40, 0.00, 0.00, 0.5)
-        
-        print("Swinging Pelvis (Untwisting Left Leg)...")
-        target_yaw_left = 0.0
-        time.sleep(0.7)
-        
-        print("Placing Right Leg on ground...")
-        transition_to(0.22, 0.22, 0.30, 0.30, 0.00, 0.00, 0.5)
-    else:
-        print("Stage 2: Left Lateral Shift (Weight on Left)...")
-        transition_to(0.22, 0.22, 0.30, 0.30, 0.00, 0.00, 0.5) 
-        
-        print("Stage 3: Lifting Right Leg...")
-        transition_to(0.22, 0.12, 0.30, 0.40, 0.00, 0.00, 0.5)
-        
-        print("Turning Right Leg (Outward)...")
-        target_yaw_right = 0.2
-        time.sleep(0.7)
-        
-        print("Placing Right Leg on ground...")
-        transition_to(0.22, 0.22, 0.30, 0.30, 0.00, 0.00, 0.5)
-        
-        print("Right Lateral Shift (Weight on Right)...")
-        transition_to(0.22, 0.22, -0.30, -0.30, 0.00, 0.00, 0.5)
-        
-        print("Lifting Left Leg...")
-        transition_to(0.12, 0.22, -0.40, -0.30, 0.00, 0.00, 0.5)
-        
-        print("Swinging Pelvis (Untwisting Right Leg)...")
-        target_yaw_right = 0.0
-        time.sleep(0.7)
-        
-        print("Placing Left Leg on ground...")
-        transition_to(0.22, 0.22, -0.30, -0.30, 0.00, 0.00, 0.5)
-        
-    print("Recentering weight...")
-    transition_to(0.23, 0.23, 0.0, 0.0, 0.0, 0.0, 0.5)
-
-def straighten_sequence():
-    global target_yaw_left, target_yaw_right
-    print("\n=== STRAIGHTENING LEGS ===")
-    
-    print("Stage 1: Pre-Crouch (Double Support)...")
-    transition_to(0.22, 0.22, 0.0, 0.0, 0.0, 0.0, 0.5)
-    
-    print("Stage 2: Left Lateral Shift (Weight on Left)...")
-    transition_to(0.22, 0.22, 0.30, 0.30, 0.00, 0.00, 0.5) 
-    
-    print("Stage 3: Lifting Right Leg...")
-    transition_to(0.22, 0.12, 0.30, 0.40, 0.00, 0.00, 0.5)
-    
-    print("Straightening Right Leg...")
-    target_yaw_right = 0.0
-    time.sleep(0.5)
-    
-    print("Placing Right Leg on ground...")
-    transition_to(0.22, 0.22, 0.30, 0.30, 0.00, 0.00, 0.5)
-    
-    print("Right Lateral Shift (Weight on Right)...")
-    transition_to(0.22, 0.22, -0.30, -0.30, 0.00, 0.00, 0.5)
-    
-    print("Lifting Left Leg...")
-    transition_to(0.12, 0.22, -0.40, -0.30, 0.00, 0.00, 0.5)
-    
-    print("Straightening Left Leg...")
-    target_yaw_left = 0.0
-    time.sleep(0.5)
-    
-    print("Placing Left Leg on ground...")
-    transition_to(0.22, 0.22, -0.30, -0.30, 0.00, 0.00, 0.5)
-    
-    print("Recentering weight...")
-    transition_to(0.23, 0.23, 0.0, 0.0, 0.0, 0.0, 0.5)
+        if dir_sign == -1: # Left Turn
+            print("Stage 2: Right Lateral Shift (Weight on Right)...")
+            transition_to(0.22, 0.22, -0.30, -0.30, 0.00, 0.00, 0.5)
+            
+            print("Stage 3: Lifting Left Leg...")
+            transition_to(0.17, 0.22, -0.40, -0.30, 0.00, 0.00, 0.5)
+            
+            print(f"Turning Left Leg (Outward by {step_angle:.2f})...")
+            target_yaw_left = -step_angle
+            time.sleep(0.7)
+            
+            print("Placing Left Leg on ground...")
+            transition_to(0.22, 0.22, -0.30, -0.30, 0.00, 0.00, 0.5)
+            
+            print("Left Lateral Shift (Weight on Left)...")
+            transition_to(0.22, 0.22, 0.30, 0.30, 0.00, 0.00, 0.5)
+            
+            print("Lifting Right Leg...")
+            transition_to(0.22, 0.17, 0.30, 0.40, 0.00, 0.00, 0.5)
+            
+            print("Swinging Pelvis (Untwisting Left Leg)...")
+            target_yaw_left = 0.0
+            time.sleep(0.7)
+            
+            print("Placing Right Leg on ground...")
+            transition_to(0.22, 0.22, 0.30, 0.30, 0.00, 0.00, 0.5)
+        else: # Right Turn
+            print("Stage 2: Left Lateral Shift (Weight on Left)...")
+            transition_to(0.22, 0.22, 0.30, 0.30, 0.00, 0.00, 0.5) 
+            
+            print("Stage 3: Lifting Right Leg...")
+            transition_to(0.22, 0.17, 0.30, 0.40, 0.00, 0.00, 0.5)
+            
+            print(f"Turning Right Leg (Outward by {step_angle:.2f})...")
+            target_yaw_right = step_angle
+            time.sleep(0.7)
+            
+            print("Placing Right Leg on ground...")
+            transition_to(0.22, 0.22, 0.30, 0.30, 0.00, 0.00, 0.5)
+            
+            print("Right Lateral Shift (Weight on Right)...")
+            transition_to(0.22, 0.22, -0.30, -0.30, 0.00, 0.00, 0.5)
+            
+            print("Lifting Left Leg...")
+            transition_to(0.17, 0.22, -0.40, -0.30, 0.00, 0.00, 0.5)
+            
+            print("Swinging Pelvis (Untwisting Right Leg)...")
+            target_yaw_right = 0.0
+            time.sleep(0.7)
+            
+            print("Placing Left Leg on ground...")
+            transition_to(0.22, 0.22, -0.30, -0.30, 0.00, 0.00, 0.5)
+            
+        print("Recentering weight...")
+        transition_to(0.23, 0.23, 0.0, 0.0, 0.0, 0.0, 0.5)
 
 def state_machine_thread():
     global current_command
     time.sleep(1.0)
-    print("\n[ENTER: Walk | 'q': Left | 'e': Right | 'w': Straight | 'k': Shutdown]")
+    print("\n[ENTER: Walk | 'q': Left | 'e': Right | 'k': Shutdown]")
     while True:
         while current_command is None:
             time.sleep(0.05)
@@ -472,14 +443,10 @@ def state_machine_thread():
             if cmd == 'walk':
                 walk_sequence()
             elif cmd == 'turn_left':
-                execute_turn("left")
-                current_command = 'walk' # auto resume walking
+                execute_turn(3.14, -1)
             elif cmd == 'turn_right':
-                execute_turn("right")
-                current_command = 'walk'
-            elif cmd == 'straight':
-                straighten_sequence()
-                current_command = 'walk'
+                execute_turn(3.14, 1)
+
         except AbortWalk:
             print("Motion Aborted.")
             pass
